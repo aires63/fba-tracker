@@ -455,8 +455,36 @@ async function driveSave(){
 }
 async function syncNow(){
   if(!gTok){setSS('err','Non connecté');return;}
-  const data=await driveLoad();
-  if(data){prods=data.prods||[];fourns=data.fourns||[];localStorage.setItem('fba_local',JSON.stringify({prods,fourns}));render();renderFL();}
+  const raw=await driveLoad();
+  if(raw){const d=migrate(raw);prods=d.prods;fourns=d.fourns;localStorage.setItem('fba_local',JSON.stringify({prods,fourns}));render();renderFL();}
+}
+
+// ─── MIGRATE : convertit les anciens formats de données ───────────────────────
+function migrate(data){
+  if(!data) return {prods:[],fourns:[]};
+  // Ancienne clé "products" (version JSONBin) → "prods"
+  let ps = data.prods || data.products || [];
+  const fs = data.fourns || [];
+  ps = ps.map(p => ({
+    id:       p.id || Date.now()+Math.random(),
+    nom:      p.nom || '',
+    asin:     p.asin || '',
+    fourn:    p.fourn || '',
+    photo:    p.photo || '',
+    date:     p.date || '',
+    cmd:      p.cmd || '',
+    notes:    p.notes || '',
+    achat:    +p.achat || 0,
+    vente:    +p.vente || 0,
+    qte:      +p.qte || 1,
+    // Ancien champ unique "fba" → scindé en fbaExp + fbaStock
+    fbaExp:   p.fbaExp != null ? +p.fbaExp : (+p.fba || 0),
+    fbaStock: p.fbaStock != null ? +p.fbaStock : 0,
+    comm:     p.comm != null ? +p.comm : 15,
+    tva:      p.tva != null ? +p.tva : 20,
+    autres:   +p.autres || 0,
+  }));
+  return {prods: ps, fourns: fs};
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
@@ -470,16 +498,17 @@ async function init(){
     if(ok){
       document.getElementById('banner').style.display='none';
       document.getElementById('btn-dc').style.display='inline-flex';
-      const data=await driveLoad();
-      if(data){prods=data.prods||[];fourns=data.fourns||[];}
-      else{prods=local?.prods||sample();fourns=local?.fourns||dfourns();}
+      const raw=await driveLoad();
+      const data=migrate(raw);
+      if(raw){prods=data.prods;fourns=data.fourns;}
+      else{const d=migrate(local);prods=d.prods.length?d.prods:sample();fourns=d.fourns.length?d.fourns:dfourns();}
     }else{
       gTok=null;setSS('err','Session expirée');document.getElementById('banner').style.display='flex';
-      prods=local?.prods||sample();fourns=local?.fourns||dfourns();
+      const d=migrate(local);prods=d.prods.length?d.prods:sample();fourns=d.fourns.length?d.fourns:dfourns();
     }
   }else{
     setSS('err','Local seulement');document.getElementById('banner').style.display='flex';
-    prods=local?.prods||sample();fourns=local?.fourns||dfourns();
+    const d=migrate(local);prods=d.prods.length?d.prods:sample();fourns=d.fourns.length?d.fourns:dfourns();
     if(!local)localStorage.setItem('fba_local',JSON.stringify({prods,fourns}));
   }
 
