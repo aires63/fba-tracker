@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FBA Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0f11; --bg2: #16181c; --bg3: #1e2026; --bg4: #252830;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13);
+  --text: #eeeeed; --text2: #888c95; --text3: #4e5260;
+  --accent: #f0a500; --accent2: #c47d00;
+  --green: #22c98a; --green-bg: rgba(34,201,138,0.1);
+  --red: #f05555; --red-bg: rgba(240,85,85,0.1);
+  --blue: #5b8ef0; --blue-bg: rgba(91,142,240,0.08);
+  --r: 10px; --rl: 14px;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --display: 'Syne', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:14px;line-height:1.6;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px;}
+
+/* HEADER */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.8rem;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:50;gap:12px;}
+.logo{font-family:var(--display);font-size:17px;font-weight:800;display:flex;align-items:center;gap:9px;white-space:nowrap;}
+.logo-icon{width:26px;height:26px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.logo-icon svg{width:14px;height:14px;color:#000;}
+.header-center{flex:1;max-width:500px;}
+.header-center .search-wrap{width:100%;}
+.header-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.sync-pill{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap;cursor:pointer;transition:border-color .15s;}
+.sync-pill:hover{border-color:var(--border2);}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.sync-dot.ok{background:var(--green);}
+.sync-dot.loading{background:var(--accent);animation:blink 1s infinite;}
+.sync-dot.error{background:var(--red);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* MAIN */
+main{padding:1.6rem;max-width:1440px;margin:0 auto;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.6rem;}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.3rem;position:relative;overflow:hidden;}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.2;}
+.stat.g::after{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+.stat.r::after{background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.stat.b::after{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
+.stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.09em;font-family:var(--mono);margin-bottom:5px;}
+.stat-val{font-family:var(--display);font-size:24px;font-weight:700;}
+.stat-val.g{color:var(--green);}
+.stat-val.r{color:var(--red);}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:1.4rem;flex-wrap:wrap;}
+.search-wrap{position:relative;flex:1;min-width:200px;}
+.search-wrap input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px 8px 34px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .15s;}
+.search-wrap input:focus{border-color:var(--border2);}
+.search-wrap input::placeholder{color:var(--text3);}
+.search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;}
+.search-ico svg{width:14px;height:14px;}
+select.flt{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;color:var(--text2);font-family:var(--sans);font-size:12px;outline:none;cursor:pointer;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text2);transition:all .15s;white-space:nowrap;}
+.btn:hover{background:var(--bg3);color:var(--text);border-color:var(--border2);}
+.btn svg{width:14px;height:14px;flex-shrink:0;}
+.btn.pri{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+.btn.pri:hover{background:var(--accent2);border-color:var(--accent2);}
+.btn.ghost{background:transparent;border-color:transparent;padding:8px 10px;}
+.btn.ghost:hover{background:var(--bg3);border-color:var(--border);}
+.vtoggle{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.vbtn{padding:7px 11px;cursor:pointer;color:var(--text3);background:none;border:none;display:flex;align-items:center;transition:all .15s;}
+.vbtn svg{width:15px;height:15px;}
+.vbtn.on{background:var(--bg3);color:var(--accent);}
+
+/* CARDS GRID */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+.pcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;cursor:pointer;transition:all .18s;}
+.pcard:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.pcard-img{height:148px;background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.pcard-img img{width:100%;height:100%;object-fit:contain;padding:10px;}
+.pcard-img-ph{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--text3);}
+.pcard-img-ph svg{width:26px;height:26px;}
+.pcard-img-ph span{font-size:10px;}
+.pcard-body{padding:11px 13px;}
+.pcard-name{font-family:var(--display);font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pcard-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:2px;}
+.pcard-row span:last-child{color:var(--text);font-family:var(--mono);}
+.rpill{display:inline-block;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:5px;margin-top:5px;font-weight:500;}
+.rpill.p{background:var(--green-bg);color:var(--green);}
+.rpill.n{background:var(--red-bg);color:var(--red);}
+
+/* LIST */
+.plist{display:flex;flex-direction:column;gap:7px;}
+.plist-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer;transition:all .15s;}
+.plist-item:hover{border-color:var(--border2);}
+.plist-thumb{width:50px;height:50px;background:var(--bg3);border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.plist-thumb img{width:100%;height:100%;object-fit:contain;padding:4px;}
+.plist-thumb svg{width:18px;height:18px;color:var(--text3);}
+.plist-info{flex:1;min-width:0;}
+.plist-name{font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.plist-meta{font-size:11px;color:var(--text2);}
+.plist-right{text-align:right;flex-shrink:0;}
+.plist-price{font-family:var(--mono);font-size:13px;font-weight:500;}
+.plist-roi{font-size:11px;font-family:var(--mono);}
+.plist-roi.p{color:var(--green);}
+.plist-roi.n{color:var(--red);}
+
+/* EMPTY */
+.empty{text-align:center;padding:4rem 1rem;color:var(--text3);}
+.empty svg{width:44px;height:44px;margin-bottom:10px;opacity:.3;}
+.empty p{font-size:14px;}
+
+/* OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:1rem;}
+.overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);width:100%;max-width:580px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:1.3rem 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0;}
+.modal-hd h2{font-family:var(--display);font-size:16px;font-weight:700;}
+.modal-bd{padding:1.3rem 1.5rem;flex:1;}
+.modal-ft{display:flex;gap:8px;justify-content:space-between;padding:1rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0;}
+.modal-ft-l,.modal-ft-r{display:flex;gap:8px;}
+
+/* FORM */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.ff{display:flex;flex-direction:column;gap:4px;}
+.ff.full{grid-column:1/-1;}
+.ff label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;font-family:var(--mono);}
+.ff input,.ff textarea,.ff select{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .15s;width:100%;}
+.ff input:focus,.ff textarea:focus{border-color:var(--accent);}
+.ff input::placeholder{color:var(--text3);}
+.ff textarea{resize:vertical;min-height:56px;}
+.fsep{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:4px;}
+.fsep span{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);white-space:nowrap;}
+.fsep::before,.fsep::after{content:'';flex:1;height:1px;background:var(--border);}
+.calc-box{grid-column:1/-1;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;display:none;}
+.crow{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);padding:2px 0;font-family:var(--mono);}
+.crow.tot{color:var(--text);font-size:12px;border-top:1px solid var(--border);margin-top:5px;padding-top:6px;font-weight:500;}
+.cv.p{color:var(--green);}
+.cv.n{color:var(--red);}
+.photo-prev{grid-column:1/-1;display:none;}
+.photo-prev img{height:76px;object-fit:contain;background:var(--bg3);border-radius:8px;padding:5px;}
+
+/* DETAIL */
+.det-img{width:100%;height:190px;object-fit:contain;background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:1.1rem;}
+.det-sec{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);margin:12px 0 6px;}
+.det-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.det-row:last-child{border-bottom:none;}
+.det-lbl{color:var(--text2);}
+.det-val{font-family:var(--mono);font-size:12px;text-align:right;max-width:60%;word-break:break-all;}
+.det-val.p{color:var(--green);}
+.det-val.n{color:var(--red);}
+.det-val.a{color:var(--accent);}
+
+/* SETUP MODAL */
+.setup-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);width:100%;max-width:500px;padding:2rem;}
+.setup-modal h2{font-family:var(--display);font-size:20px;font-weight:800;margin-bottom:.4rem;}
+.setup-modal .sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.7;}
+.steps{display:flex;flex-direction:column;gap:12px;margin-bottom:1.5rem;}
+.step{display:flex;gap:12px;align-items:flex-start;}
+.step-n{width:24px;height:24px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--mono);font-weight:500;color:var(--text2);flex-shrink:0;margin-top:1px;}
+.step-txt{font-size:13px;color:var(--text2);line-height:1.6;}
+.step-txt strong{color:var(--text);}
+.step-txt code{background:var(--bg3);padding:1px 5px;border-radius:4px;font-family:var(--mono);font-size:11px;color:var(--accent);}
+.inp-row{display:flex;gap:8px;margin-bottom:10px;}
+.inp-row input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .15s;}
+.inp-row input:focus{border-color:var(--accent);}
+.inp-row input::placeholder{color:var(--text3);}
+.setup-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1.2rem;}
+.google-btn{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:8px;padding:9px 16px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:box-shadow .15s;}
+.google-btn:hover{box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.google-btn svg{width:16px;height:16px;}
+
+/* BANNER */
+.banner{background:var(--blue-bg);border:1px solid rgba(91,142,240,.15);border-radius:var(--r);padding:11px 14px;margin-bottom:1.4rem;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.banner p{font-size:13px;color:var(--text2);}
+.banner strong{color:var(--text);}
+
+.btn.danger{background:var(--red-bg);color:var(--red);border-color:transparent;}
+.btn.danger:hover{background:rgba(240,85,85,.2);}
+
+@media(max-width:640px){
+  header{padding:0 1rem;}
+  .header-center{display:none;}
+  main{padding:1rem;}
+  .stats{grid-template-columns:1fr 1fr;}
+  .fgrid{grid-template-columns:1fr;}
+  .ff.full,.fsep,.calc-box,.photo-prev{grid-column:1;}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+    </div>
+    FBA Tracker
+  </div>
+  <div class="header-center">
+    <div class="search-wrap">
+      <span class="search-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input type="text" id="search" placeholder="Rechercher nom, ASIN, fournisseur, commande...">
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sync-pill" onclick="openSetup()" id="sync-pill">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-lbl">Non connecté</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="banner" style="display:none;">
+    <p><strong>Google Drive non configuré.</strong> Tes données sont en local uniquement. Connecte ton Drive pour la sync multi-PC.</p>
+    <button class="btn" onclick="openSetup()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/></svg>
+      Connecter Drive
+    </button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <div class="search-wrap" style="display:none" id="toolbar-search">
+      <span class="search-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      <input type="text" id="search2" placeholder="Rechercher...">
+    </div>
+    <select class="flt" id="fFourn"><option value="">Tous les fournisseurs</option></select>
+    <select class="flt" id="fRoi">
+      <option value="">Tous les ROI</option>
+      <option value="p">ROI positif</option>
+      <option value="n">ROI négatif</option>
+      <option value="nc">Sans calcul</option>
+    </select>
+    <div class="vtoggle">
+      <button class="vbtn on" id="vg" onclick="setView('grid')" title="Grille"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+      <button class="vbtn" id="vl" onclick="setView('list')" title="Liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+    </div>
+    <div style="flex:1;"></div>
+    <button class="btn" onclick="syncNow()" title="Synchroniser maintenant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button>
+    <button class="btn" onclick="exportCSV()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV</button>
+    <button class="btn pri" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ajouter</button>
+  </div>
+
+  <div id="container"></div>
+</main>
+
+<!-- ADD/EDIT -->
+<div class="overlay" id="ov-add">
+<div class="modal">
+  <div class="modal-hd">
+    <h2 id="add-title">Nouveau produit</h2>
+    <button class="btn ghost" onclick="closeOv('ov-add')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="modal-bd">
+    <div class="fgrid">
+      <div class="ff full"><label>Désignation *</label><input type="text" id="f-nom" placeholder="Ex: Brosse à dents Oral-B Pro 3"></div>
+      <div class="ff full"><label>URL photo</label><input type="text" id="f-photo" placeholder="https://..." oninput="prevPhoto()"></div>
+      <div class="photo-prev" id="photo-prev"><img id="photo-img" src="" alt=""></div>
+      <div class="fsep"><span>Identification</span></div>
+      <div class="ff"><label>ASIN Amazon</label><input type="text" id="f-asin" placeholder="B0XXXXXXXX"></div>
+      <div class="ff"><label>Fournisseur</label><input type="text" id="f-fourn" placeholder="Alibaba, Cdiscount..."></div>
+      <div class="ff"><label>Date d'achat</label><input type="date" id="f-date"></div>
+      <div class="ff"><label>N° commande / facture</label><input type="text" id="f-cmd" placeholder="FR-2024-00123"></div>
+      <div class="fsep"><span>Prix & Stock</span></div>
+      <div class="ff"><label>Prix d'achat unitaire (€) *</label><input type="number" id="f-achat" step="0.01" min="0" placeholder="0.00" oninput="updCalc()"></div>
+      <div class="ff"><label>Prix de vente Amazon (€)</label><input type="number" id="f-vente" step="0.01" min="0" placeholder="0.00" oninput="updCalc()"></div>
+      <div class="ff"><label>Quantité achetée</label><input type="number" id="f-qte" min="1" placeholder="1"></div>
+      <div class="fsep"><span>Frais Amazon FBA</span></div>
+      <div class="ff"><label>Frais FBA — stockage + expédition (€)</label><input type="number" id="f-fba" step="0.01" min="0" placeholder="0.00" oninput="updCalc()"></div>
+      <div class="ff"><label>Commission Amazon (%)</label><input type="number" id="f-comm" step="0.5" min="0" max="100" placeholder="15" oninput="updCalc()"></div>
+      <div class="ff full"><label>Autres frais — pub, retours (€)</label><input type="number" id="f-autres" step="0.01" min="0" placeholder="0.00" oninput="updCalc()"></div>
+      <div class="calc-box" id="calc-box">
+        <div class="crow"><span>Prix de vente</span><span class="cv" id="cv-vente"></span></div>
+        <div class="crow"><span>− Prix d'achat</span><span class="cv" id="cv-achat"></span></div>
+        <div class="crow"><span>− Frais FBA</span><span class="cv" id="cv-fba"></span></div>
+        <div class="crow"><span>− Commission Amazon</span><span class="cv" id="cv-comm"></span></div>
+        <div class="crow"><span>− Autres frais</span><span class="cv" id="cv-autres"></span></div>
+        <div class="crow tot"><span>Bénéfice net / unité</span><span class="cv" id="cv-net"></span></div>
+        <div class="crow tot"><span>ROI</span><span class="cv" id="cv-roi"></span></div>
+        <div class="crow tot"><span>Marge nette</span><span class="cv" id="cv-marge"></span></div>
+      </div>
+      <div class="ff full"><label>Notes</label><textarea id="f-notes" placeholder="Couleur, taille, variante..."></textarea></div>
+    </div>
+  </div>
+  <div class="modal-ft">
+    <div class="modal-ft-l"><button class="btn danger" id="btn-del" style="display:none" onclick="delProduct()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>Supprimer</button></div>
+    <div class="modal-ft-r">
+      <button class="btn" onclick="closeOv('ov-add')">Annuler</button>
+      <button class="btn pri" onclick="saveProd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>Enregistrer</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- DETAIL -->
+<div class="overlay" id="ov-det">
+<div class="modal">
+  <div class="modal-hd">
+    <h2 id="det-title" style="font-size:14px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></h2>
+    <button class="btn ghost" onclick="closeOv('ov-det')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="modal-bd" id="det-body"></div>
+  <div class="modal-ft">
+    <div class="modal-ft-l"></div>
+    <div class="modal-ft-r">
+      <button class="btn" onclick="closeOv('ov-det')">Fermer</button>
+      <button class="btn pri" onclick="editFromDet()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SETUP / GOOGLE DRIVE -->
+<div class="overlay" id="ov-setup">
+<div class="setup-modal">
+  <h2>Sync Google Drive</h2>
+  <p class="sub">Tes données seront stockées dans un fichier <strong>fba-tracker-data.json</strong> sur ton Google Drive. Accessible depuis tous tes PC.</p>
+
+  <div id="setup-connect">
+    <div class="steps">
+      <div class="step"><div class="step-n">1</div><div class="step-txt">Clique sur <strong>Connecter avec Google</strong> ci-dessous</div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-txt">Autorise l'accès à ton Drive (lecture + écriture d'un seul fichier)</div></div>
+      <div class="step"><div class="step-n">3</div><div class="step-txt">C'est tout — tes données se synchronisent automatiquement à chaque modification</div></div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <p style="font-size:12px;color:var(--text3);margin-bottom:8px;">Clé API Google (Client ID) — remplie automatiquement si tu utilises le fichier HTML tel quel :</p>
+      <div class="inp-row">
+        <input type="text" id="cfg-clientid" placeholder="Ton Google OAuth Client ID (optionnel si déjà configuré)">
+      </div>
+    </div>
+    <div class="setup-actions">
+      <button class="btn" onclick="closeOv('ov-setup')">Annuler</button>
+      <button class="btn danger" id="btn-disconnect" style="display:none" onclick="disconnectDrive()">Déconnecter</button>
+      <button class="google-btn" onclick="startGoogleAuth()">
+        <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Connecter avec Google
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- GUIDE CLIENT ID -->
+<div class="overlay" id="ov-guide">
+<div class="setup-modal">
+  <h2>Configurer Google OAuth</h2>
+  <p class="sub">Pour utiliser Google Drive depuis un fichier HTML local, il faut un Client ID Google gratuit. Ça prend 5 minutes.</p>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt">Va sur <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent)">console.cloud.google.com</a> → crée un projet</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt">Menu <strong>APIs & Services</strong> → <strong>Bibliothèque</strong> → active <strong>Google Drive API</strong></div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt">Menu <strong>Identifiants</strong> → <strong>Créer des identifiants</strong> → <strong>ID client OAuth</strong></div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt">Type : <strong>Application Web</strong> · Origines autorisées : <code>null</code> (pour fichier local) ou ton domaine</div></div>
+    <div class="step"><div class="step-n">5</div><div class="step-txt">Copie le <strong>Client ID</strong> et colle-le dans le champ Clé API, puis clique Connecter</div></div>
+  </div>
+  <div class="setup-actions">
+    <button class="btn" onclick="closeOv('ov-guide')">Retour</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// Si tu héberges ce fichier en ligne, remplace par ton propre Client ID Google
+const DEFAULT_CLIENT_ID = localStorage.getItem('fba_clientid') || '';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const FILE_NAME = 'fba-tracker-data.json';
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let products = [];
+let view = 'grid';
+let editId = null;
+let detId = null;
+let gToken = null;
+let gFileId = localStorage.getItem('fba_fileid') || null;
+
+// ─── GOOGLE AUTH ──────────────────────────────────────────────────────────────
+function getClientId() {
+  return document.getElementById('cfg-clientid').value.trim() || DEFAULT_CLIENT_ID;
+}
+
+function startGoogleAuth() {
+  const clientId = getClientId();
+  if (!clientId) { openOv('ov-guide'); return; }
+  localStorage.setItem('fba_clientid', clientId);
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: location.href.split('?')[0].split('#')[0],
+    response_type: 'token',
+    scope: SCOPES,
+    prompt: 'select_account'
+  });
+  location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+function handleAuthCallback() {
+  const hash = location.hash.substring(1);
+  if (!hash) return false;
+  const params = new URLSearchParams(hash);
+  const token = params.get('access_token');
+  if (!token) return false;
+  gToken = token;
+  history.replaceState(null, '', location.pathname);
+  localStorage.setItem('fba_token_tmp', token);
+  return true;
+}
+
+function loadToken() {
+  const t = localStorage.getItem('fba_token_tmp');
+  if (t) { gToken = t; return true; }
+  return false;
+}
+
+async function verifyToken() {
+  if (!gToken) return false;
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + gToken);
+    const d = await r.json();
+    if (d.error) { gToken = null; localStorage.removeItem('fba_token_tmp'); return false; }
+    return true;
+  } catch { return false; }
+}
+
+function disconnectDrive() {
+  gToken = null; gFileId = null;
+  localStorage.removeItem('fba_token_tmp');
+  localStorage.removeItem('fba_fileid');
+  setSyncStatus('error', 'Déconnecté');
+  document.getElementById('banner').style.display = 'flex';
+  document.getElementById('btn-disconnect').style.display = 'none';
+  closeOv('ov-setup');
+}
+
+// ─── DRIVE API ────────────────────────────────────────────────────────────────
+async function driveLoad() {
+  if (!gToken) return null;
+  try {
+    setSyncStatus('loading', 'Chargement Drive...');
+    // Cherche le fichier
+    if (!gFileId) {
+      const r = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=name='${FILE_NAME}' and trashed=false&spaces=drive&fields=files(id,name)`,
+        { headers: { Authorization: 'Bearer ' + gToken } }
+      );
+      const d = await r.json();
+      if (d.files && d.files.length > 0) {
+        gFileId = d.files[0].id;
+        localStorage.setItem('fba_fileid', gFileId);
+      }
+    }
+    if (!gFileId) {
+      setSyncStatus('ok', 'Drive connecté · nouveau fichier');
+      return [];
+    }
+    // Lit le fichier
+    const r2 = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${gFileId}?alt=media`,
+      { headers: { Authorization: 'Bearer ' + gToken } }
+    );
+    const data = await r2.json();
+    setSyncStatus('ok', 'Synchronisé · ' + hhMM());
+    return data.products || [];
+  } catch(e) {
+    setSyncStatus('error', 'Erreur Drive');
+    return null;
+  }
+}
+
+async function driveSave() {
+  if (!gToken) { localStorage.setItem('fba_local', JSON.stringify(products)); return; }
+  setSyncStatus('loading', 'Sauvegarde...');
+  try {
+    const body = JSON.stringify({ products, updated: new Date().toISOString() });
+    if (!gFileId) {
+      // Crée le fichier
+      const meta = JSON.stringify({ name: FILE_NAME, mimeType: 'application/json' });
+      const form = new FormData();
+      form.append('metadata', new Blob([meta], { type: 'application/json' }));
+      form.append('file', new Blob([body], { type: 'application/json' }));
+      const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST', headers: { Authorization: 'Bearer ' + gToken }, body: form
+      });
+      const d = await r.json();
+      gFileId = d.id;
+      localStorage.setItem('fba_fileid', gFileId);
+    } else {
+      // Met à jour
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${gFileId}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + gToken, 'Content-Type': 'application/json' },
+        body
+      });
+    }
+    localStorage.setItem('fba_local', JSON.stringify(products));
+    setSyncStatus('ok', 'Sauvegardé · ' + hhMM());
+    document.getElementById('btn-disconnect').style.display = 'inline-flex';
+  } catch(e) {
+    localStorage.setItem('fba_local', JSON.stringify(products));
+    setSyncStatus('error', 'Drive KO · local OK');
+  }
+}
+
+async function syncNow() {
+  if (!gToken) { setSyncStatus('error', 'Non connecté'); return; }
+  const remote = await driveLoad();
+  if (remote) { products = remote; localStorage.setItem('fba_local', JSON.stringify(products)); render(); }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+async function init() {
+  const fromAuth = handleAuthCallback();
+  loadToken();
+  const local = JSON.parse(localStorage.getItem('fba_local') || 'null');
+
+  if (gToken) {
+    const valid = await verifyToken();
+    if (valid) {
+      document.getElementById('banner').style.display = 'none';
+      document.getElementById('btn-disconnect').style.display = 'inline-flex';
+      if (fromAuth) {
+        // Premier chargement après auth
+        const remote = await driveLoad();
+        products = remote && remote.length ? remote : (local || sample());
+      } else {
+        const remote = await driveLoad();
+        products = remote || local || sample();
+      }
+    } else {
+      gToken = null;
+      setSyncStatus('error', 'Session expirée');
+      document.getElementById('banner').style.display = 'flex';
+      products = local || sample();
+    }
+  } else {
+    setSyncStatus('error', 'Local seulement');
+    document.getElementById('banner').style.display = 'flex';
+    products = local || sample();
+    if (!local) localStorage.setItem('fba_local', JSON.stringify(products));
+  }
+
+  document.getElementById('cfg-clientid').value = localStorage.getItem('fba_clientid') || '';
+  document.getElementById('search').addEventListener('input', render);
+  document.getElementById('fFourn').addEventListener('change', render);
+  document.getElementById('fRoi').addEventListener('change', render);
+  render();
+}
+
+// ─── SYNC STATUS ──────────────────────────────────────────────────────────────
+function setSyncStatus(s, msg) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-lbl');
+  dot.className = 'sync-dot' + (s==='ok'?  ' ok' : s==='loading' ? ' loading' : ' error');
+  lbl.textContent = msg;
+}
+
+// ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
+function sample() {
+  return [
+    { id:1, nom:'Brosse à dents Oral-B Pro 3', asin:'B08N5T3JX7', fourn:'Amazon FR', achat:18.50, vente:34.99, qte:5, date:'2025-01-15', cmd:'AMZ-2025-001', notes:'Blanc, étui voyage', photo:'https://m.media-amazon.com/images/I/51F0EZbaBwL._AC_SL1500_.jpg', fba:4.50, comm:15, autres:1.00 },
+    { id:2, nom:'Support téléphone voiture magnétique', asin:'B09XK123YZ', fourn:'Aliexpress', achat:4.20, vente:14.99, qte:20, date:'2025-02-03', cmd:'ALI-20250203-88', notes:'Grille ventilation', photo:'', fba:3.20, comm:15, autres:0.50 },
+    { id:3, nom:'Cable USB-C 2m tressé', asin:'B0CXY456AB', fourn:'Cdiscount', achat:2.80, vente:9.99, qte:50, date:'2025-02-20', cmd:'CD-0220-2025', notes:'', photo:'', fba:2.80, comm:15, autres:0 },
+  ];
+}
+
+// ─── CALC ─────────────────────────────────────────────────────────────────────
+function calc(p) {
+  if (!p.vente || !p.achat) return null;
+  const commAmt = p.vente * ((p.comm||15)/100);
+  const net = p.vente - p.achat - (p.fba||0) - commAmt - (p.autres||0);
+  return { net, roi: (net/p.achat)*100, marge: (net/p.vente)*100, commAmt };
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function filt() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const ff = document.getElementById('fFourn').value;
+  const fr = document.getElementById('fRoi').value;
+  return products.filter(p => {
+    if (q && ![p.nom,p.asin,p.fourn,p.cmd,p.notes].join(' ').toLowerCase().includes(q)) return false;
+    if (ff && p.fourn !== ff) return false;
+    if (fr) { const m=calc(p); if(fr==='p'&&(!m||m.roi<0)) return false; if(fr==='n'&&(!m||m.roi>=0)) return false; if(fr==='nc'&&m) return false; }
+    return true;
+  });
+}
+
+function updFourns() {
+  const sel = document.getElementById('fFourn'), cur = sel.value;
+  const list = [...new Set(products.map(p=>p.fourn).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Tous les fournisseurs</option>' + list.map(f=>`<option value="${x(f)}"${f===cur?' selected':''}>${x(f)}</option>`).join('');
+}
+
+function setView(v) {
+  view = v;
+  document.getElementById('vg').className = 'vbtn'+(v==='grid'?' on':'');
+  document.getElementById('vl').className = 'vbtn'+(v==='list'?' on':'');
+  render();
+}
+
+function render() {
+  updFourns();
+  const list = filt();
+  renderStats(list);
+  const cont = document.getElementById('container');
+  if (!list.length) { cont.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg><p>Aucun produit trouvé</p></div>`; return; }
+  if (view==='grid') cont.innerHTML=`<div class="pgrid">${list.map(cardH).join('')}</div>`;
+  else cont.innerHTML=`<div class="plist">${list.map(listH).join('')}</div>`;
+}
+
+function renderStats(list) {
+  const cap = list.reduce((s,p)=>s+p.achat*(p.qte||1),0);
+  const stk = list.reduce((s,p)=>s+(p.qte||1),0);
+  const wm = list.filter(p=>calc(p));
+  const avgRoi = wm.length ? wm.reduce((s,p)=>s+calc(p).roi,0)/wm.length : null;
+  const totBen = wm.reduce((s,p)=>s+calc(p).net*(p.qte||1),0);
+  let h = `
+    <div class="stat b"><div class="stat-lbl">Produits</div><div class="stat-val">${list.length}</div></div>
+    <div class="stat"><div class="stat-lbl">Unités stock</div><div class="stat-val">${stk}</div></div>
+    <div class="stat"><div class="stat-lbl">Capital investi</div><div class="stat-val">${f2(cap)} €</div></div>
+  `;
+  if (avgRoi!==null) {
+    h += `<div class="stat ${avgRoi>=0?'g':'r'}"><div class="stat-lbl">ROI moyen</div><div class="stat-val ${avgRoi>=0?'g':'r'}">${Math.round(avgRoi)}%</div></div>`;
+    h += `<div class="stat ${totBen>=0?'g':'r'}"><div class="stat-lbl">Bénéfice potentiel</div><div class="stat-val ${totBen>=0?'g':'r'}">${f2(totBen)} €</div></div>`;
+  }
+  document.getElementById('stats').innerHTML = h;
+}
+
+function imgPH() { return `<div class="pcard-img-ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span>Pas de photo</span></div>`; }
+
+function cardH(p) {
+  const m = calc(p);
+  const img = p.photo ? `<img src="${x(p.photo)}" alt="" onerror="this.parentNode.innerHTML='${imgPH().replace(/'/g,"\\'")}'">` : imgPH();
+  return `<div class="pcard" onclick="openDet(${p.id})">
+    <div class="pcard-img">${img}</div>
+    <div class="pcard-body">
+      <div class="pcard-name" title="${x(p.nom)}">${x(p.nom)}</div>
+      <div class="pcard-row"><span>Achat</span><span>${f2(p.achat)} €</span></div>
+      ${p.vente?`<div class="pcard-row"><span>Vente</span><span>${f2(p.vente)} €</span></div>`:''}
+      <div class="pcard-row"><span>Qté</span><span>${p.qte||1} u.</span></div>
+      ${m?`<span class="rpill ${m.roi>=0?'p':'n'}">ROI ${Math.round(m.roi)}% · Net ${f2(m.net)} €</span>`:''}
+    </div>
+  </div>`;
+}
+
+function listH(p) {
+  const m = calc(p);
+  const thumb = p.photo ? `<img src="${x(p.photo)}" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px;" onerror="this.style.display='none'">` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
+  return `<div class="plist-item" onclick="openDet(${p.id})">
+    <div class="plist-thumb">${thumb}</div>
+    <div class="plist-info">
+      <div class="plist-name">${x(p.nom)}</div>
+      <div class="plist-meta">${x(p.fourn||'—')} · ${p.date||'—'} · ${x(p.cmd||'—')}</div>
+      ${p.asin?`<div class="plist-meta" style="color:var(--text3)">ASIN: ${x(p.asin)}</div>`:''}
+    </div>
+    <div class="plist-right">
+      <div class="plist-price">${f2(p.achat)} €</div>
+      ${m?`<div class="plist-roi ${m.roi>=0?'p':'n'}">ROI ${Math.round(m.roi)}%</div>`:''}
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${p.qte||1} u.</div>
+    </div>
+  </div>`;
+}
+
+// ─── DETAIL ───────────────────────────────────────────────────────────────────
+function openDet(id) {
+  const p = products.find(x=>x.id===id); if(!p) return;
+  detId = id;
+  document.getElementById('det-title').textContent = p.nom;
+  const m = calc(p);
+  let h = '';
+  if (p.photo) h += `<img class="det-img" src="${x(p.photo)}" alt="">`;
+  h += row('ASIN', p.asin ? `<a href="https://www.amazon.fr/dp/${x(p.asin)}" target="_blank" style="color:var(--accent)">${x(p.asin)} ↗</a>` : '—', 'a');
+  h += row('Fournisseur', x(p.fourn||'—'));
+  h += row('Date achat', p.date||'—');
+  h += row('N° commande', x(p.cmd||'—'));
+  h += `<div class="det-sec">Prix & Stock</div>`;
+  h += row("Prix d'achat", f2(p.achat)+' €');
+  if(p.vente) h += row('Prix de vente', f2(p.vente)+' €');
+  h += row('Quantité', (p.qte||1)+' unités');
+  h += row('Capital investi', f2(p.achat*(p.qte||1))+' €');
+  if (m) {
+    const c = m.roi>=0?'p':'n';
+    h += `<div class="det-sec">Rentabilité FBA</div>`;
+    h += row('Frais FBA', f2(p.fba||0)+' €');
+    h += row('Commission Amazon', f2(m.commAmt)+' € ('+( p.comm||15)+'%)');
+    h += row('Autres frais', f2(p.autres||0)+' €');
+    h += row('Bénéfice net / unité', f2(m.net)+' €', c);
+    h += row('ROI', Math.round(m.roi)+'%', c);
+    h += row('Marge nette', Math.round(m.marge)+'%', c);
+    h += row('Bénéfice total stock', f2(m.net*(p.qte||1))+' €', c);
+  }
+  if(p.notes) h += `<div class="det-sec">Notes</div><p style="font-size:13px;color:var(--text2);padding:6px 0">${x(p.notes)}</p>`;
+  document.getElementById('det-body').innerHTML = h;
+  openOv('ov-det');
+}
+function row(l, v, cls='') { return `<div class="det-row"><span class="det-lbl">${l}</span><span class="det-val ${cls}">${v}</span></div>`; }
+function editFromDet() { closeOv('ov-det'); openEdit(detId); }
+
+// ─── ADD / EDIT ───────────────────────────────────────────────────────────────
+function openAdd() {
+  editId = null;
+  document.getElementById('add-title').textContent = 'Nouveau produit';
+  document.getElementById('btn-del').style.display = 'none';
+  ['nom','asin','fourn','achat','vente','qte','date','cmd','notes','photo','fba','autres'].forEach(k=>{const e=document.getElementById('f-'+k);if(e)e.value='';});
+  document.getElementById('f-comm').value='15';
+  document.getElementById('photo-prev').style.display='none';
+  document.getElementById('calc-box').style.display='none';
+  openOv('ov-add');
+}
+
+function openEdit(id) {
+  editId = id;
+  const p = products.find(q=>q.id===id); if(!p) return;
+  document.getElementById('add-title').textContent = 'Modifier le produit';
+  document.getElementById('btn-del').style.display = 'inline-flex';
+  const map = {nom:p.nom,asin:p.asin,fourn:p.fourn,achat:p.achat,vente:p.vente||'',qte:p.qte||1,date:p.date,cmd:p.cmd,notes:p.notes,photo:p.photo,fba:p.fba||'',comm:p.comm||15,autres:p.autres||''};
+  Object.entries(map).forEach(([k,v])=>{const e=document.getElementById('f-'+k);if(e)e.value=v||'';});
+  prevPhoto(); updCalc();
+  openOv('ov-add');
+}
+
+function prevPhoto() {
+  const u=document.getElementById('f-photo').value.trim();
+  const w=document.getElementById('photo-prev');
+  if(u){w.style.display='block';document.getElementById('photo-img').src=u;}else{w.style.display='none';}
+}
+
+function updCalc() {
+  const a=parseFloat(document.getElementById('f-achat').value)||0;
+  const v=parseFloat(document.getElementById('f-vente').value)||0;
+  const fba=parseFloat(document.getElementById('f-fba').value)||0;
+  const comm=parseFloat(document.getElementById('f-comm').value)||15;
+  const autres=parseFloat(document.getElementById('f-autres').value)||0;
+  const box=document.getElementById('calc-box');
+  if(!v||!a){box.style.display='none';return;}
+  box.style.display='block';
+  const ca=v*comm/100, net=v-a-fba-ca-autres, roi=(net/a)*100, marge=(net/v)*100, c=net>=0?'p':'n';
+  set('cv-vente', f2(v)+' €', '');
+  set('cv-achat', f2(a)+' €', '');
+  set('cv-fba', f2(fba)+' €', '');
+  set('cv-comm', f2(ca)+' € ('+comm+'%)', '');
+  set('cv-autres', f2(autres)+' €', '');
+  set('cv-net', f2(net)+' €', c);
+  set('cv-roi', Math.round(roi)+'%', c);
+  set('cv-marge', Math.round(marge)+'%', c);
+}
+function set(id, txt, cls) { const e=document.getElementById(id); e.textContent=txt; e.className='cv '+cls; }
+
+async function saveProd() {
+  const nom=document.getElementById('f-nom').value.trim();
+  const achat=parseFloat(document.getElementById('f-achat').value);
+  if(!nom){alert('Désignation obligatoire.');return;}
+  if(isNaN(achat)||achat<=0){alert("Prix d'achat obligatoire.");return;}
+  const p={
+    id: editId||Date.now(), nom, achat,
+    asin:document.getElementById('f-asin').value.trim(),
+    fourn:document.getElementById('f-fourn').value.trim(),
+    vente:parseFloat(document.getElementById('f-vente').value)||0,
+    qte:parseInt(document.getElementById('f-qte').value)||1,
+    date:document.getElementById('f-date').value,
+    cmd:document.getElementById('f-cmd').value.trim(),
+    notes:document.getElementById('f-notes').value.trim(),
+    photo:document.getElementById('f-photo').value.trim(),
+    fba:parseFloat(document.getElementById('f-fba').value)||0,
+    comm:parseFloat(document.getElementById('f-comm').value)||15,
+    autres:parseFloat(document.getElementById('f-autres').value)||0,
+  };
+  if(editId){const i=products.findIndex(q=>q.id===editId);products[i]=p;}
+  else products.push(p);
+  closeOv('ov-add'); render(); await driveSave();
+}
+
+async function delProduct() {
+  if(!confirm('Supprimer ce produit ?')) return;
+  products=products.filter(q=>q.id!==editId);
+  closeOv('ov-add'); render(); await driveSave();
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const list = filt();
+  const heads = ['Désignation','ASIN','Fournisseur','Prix achat €','Prix vente €','Frais FBA €','Commission %','Autres frais €','Bénéfice net/u €','ROI %','Marge %','Quantité','Capital investi €','Bénéfice total €','Date achat','N° commande','Notes'];
+  const rows = list.map(p=>{
+    const m=calc(p);
+    return [p.nom,p.asin,p.fourn,p.achat,p.vente||'',p.fba||'',p.comm||15,p.autres||'',
+      m?f2(m.net):'',m?Math.round(m.roi):'',m?Math.round(m.marge):'',
+      p.qte||1,f2(p.achat*(p.qte||1)),m?f2(m.net*(p.qte||1)):'',p.date,p.cmd,p.notes
+    ].map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',');
+  });
+  const csv='\uFEFF'+[heads.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='fba_tracker_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function openOv(id){document.getElementById(id).classList.add('open');}
+function closeOv(id){document.getElementById(id).classList.remove('open');}
+function openSetup(){openOv('ov-setup');}
+function f2(n){return (Math.round(n*100)/100).toFixed(2);}
+function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function hhMM(){return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-add','ov-det','ov-setup','ov-guide'].forEach(closeOv);});
+
+init();
+</script>
+</body>
+</html>
