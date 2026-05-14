@@ -289,15 +289,16 @@ select.fl{background:var(--bg2);border:1px solid var(--b);border-radius:var(--ra
       <div class="ff"><label>Autres frais — pub, retours (€)</label><input type="number" id="f-autres" step="0.01" min="0" placeholder="0.00" oninput="updC()"></div>
 
       <div class="cbox" id="cbox">
-        <div class="cbox-title">Simulation de rentabilité</div>
-        <div class="crow"><span>Prix de vente TTC</span><span class="cv" id="cv-v"></span></div>
-        <div class="crow sub"><span>dont TVA collectée (à reverser)</span><span class="cv" id="cv-tva-due"></span></div>
-        <div class="crow"><span>− Prix d'achat</span><span class="cv" id="cv-a"></span></div>
+        <div class="cbox-title">Simulation de rentabilité — formule SellerAmp</div>
+        <div class="crow"><span>Prix de vente</span><span class="cv" id="cv-v"></span></div>
         <div class="crow"><span>− Commission Amazon</span><span class="cv" id="cv-comm"></span></div>
         <div class="crow"><span>− Frais FBA expédition</span><span class="cv" id="cv-fe"></span></div>
         <div class="crow"><span>− Frais FBA stockage</span><span class="cv" id="cv-fs"></span></div>
-        <div class="crow sub"><span>dont TVA sur frais</span><span class="cv" id="cv-tva-frais"></span></div>
         <div class="crow"><span>− Autres frais</span><span class="cv" id="cv-au"></span></div>
+        <div class="crow sub"><span>TVA sur frais Amazon</span><span class="cv" id="cv-tva-frais"></span></div>
+        <div class="crow"><span>= Reversement Amazon (payout)</span><span class="cv" id="cv-payout"></span></div>
+        <div class="crow"><span>− Prix d'achat</span><span class="cv" id="cv-a"></span></div>
+        <div class="crow sub"><span>TVA nette à reverser à l'état</span><span class="cv" id="cv-tva-due"></span></div>
         <div class="crow tot"><span>Bénéfice net / unité</span><span class="cv" id="cv-net"></span></div>
         <div class="crow tot"><span>ROI</span><span class="cv" id="cv-roi"></span></div>
         <div class="crow tot"><span>Marge nette</span><span class="cv" id="cv-mg"></span></div>
@@ -499,19 +500,25 @@ function sample(){
 }
 
 // ─── CALC ─────────────────────────────────────────────────────────────────────
-// Calqué sur SellerAmp :
-// net = vente - commAmt - fbaExp - fbaStock - tvaFrais - achat - tvaDue - autres
-// ROI = net / achat * 100
+// Formule identique à SellerAmp :
+// fees_HT  = commission + fbaExp + fbaStock + autres  (frais Amazon HT)
+// tvaFrais = fees_HT x tvaRate  (TVA qu'Amazon facture sur ses frais)
+// payout   = vente - fees_HT - tvaFrais  (reversement Amazon)
+// tvaDue   = (payout - achat) x tva/(1+tva)  (TVA nette sur la marge)
+// profit   = payout - achat - tvaDue  =  (payout - achat) / (1+tva)
+// ROI      = profit / achat x 100
 function calcM(p){
   if(!p.vente||!p.achat) return null;
   const tr=(p.tva!=null?p.tva:20)/100;
   const comm=p.vente*(p.comm!=null?p.comm:15)/100;
   const fe=p.fbaExp||0, fs=p.fbaStock||0, au=p.autres||0;
-  const tvaFrais=tr>0?(comm+fe+fs)*tr:0;
-  const tvaDue=tr>0?p.vente*tr/(1+tr):0;
-  const payout=p.vente-comm-fe-fs-tvaFrais;
-  const net=payout-p.achat-tvaDue-au;
-  return {net,roi:(net/p.achat)*100,marge:(net/p.vente)*100,comm,tvaFrais,tvaDue,payout,fe,fs};
+  const feesHT=comm+fe+fs+au;
+  const tvaFrais=tr>0?feesHT*tr:0;
+  const payout=p.vente-feesHT-tvaFrais;
+  const margeBrute=payout-p.achat;
+  const tvaDue=tr>0?margeBrute*tr/(1+tr):0;
+  const net=margeBrute-tvaDue;
+  return {net,roi:(net/p.achat)*100,marge:(net/p.vente)*100,comm,tvaFrais,tvaDue,payout,fe,fs,feesHT};
 }
 
 // ─── FORM CALC ────────────────────────────────────────────────────────────────
@@ -523,19 +530,22 @@ function updC(){
   if(!v||!a){box.style.display='none';return;}
   box.style.display='block';
   const tr=tva/100, commAmt=v*comm/100;
-  const tvaFrais=tr>0?(commAmt+fe+fs)*tr:0;
-  const tvaDue=tr>0?v*tr/(1+tr):0;
-  const payout=v-commAmt-fe-fs-tvaFrais;
-  const net=payout-a-tvaDue-au;
+  const feesHT=commAmt+fe+fs+au;
+  const tvaFrais=tr>0?feesHT*tr:0;
+  const payout=v-feesHT-tvaFrais;
+  const margeBrute=payout-a;
+  const tvaDue=tr>0?margeBrute*tr/(1+tr):0;
+  const net=margeBrute-tvaDue;
   const roi=(net/a)*100, marge=(net/v)*100, c=net>=0?'p':'n';
   sv('cv-v',f2(v)+' €','');
-  sv('cv-tva-due',tr>0?f2(tvaDue)+' €':'—','');
   sv('cv-a',f2(a)+' €','');
   sv('cv-comm',f2(commAmt)+' € ('+comm+'%)','');
   sv('cv-fe',f2(fe)+' €','');
   sv('cv-fs',f2(fs)+' €','');
-  sv('cv-tva-frais',tr>0?f2(tvaFrais)+' €':'—','');
   sv('cv-au',f2(au)+' €','');
+  sv('cv-tva-frais',tr>0?f2(tvaFrais)+' €':'—','');
+  sv('cv-tva-due',tr>0?f2(tvaDue)+' €':'—','');
+  sv('cv-payout',f2(payout)+' €','');
   sv('cv-net',f2(net)+' €',c);
   sv('cv-roi',Math.round(roi)+'%',c);
   sv('cv-mg',Math.round(marge)+'%',c);
@@ -666,10 +676,10 @@ function openDet(id){
     h+=dr('Commission Amazon',f2(m.comm)+' € ('+(p.comm!=null?p.comm:15)+'%)');
     h+=dr('Frais FBA expédition',f2(m.fe)+' €');
     h+=dr('Frais FBA stockage',f2(m.fs)+' €');
-    if(p.tva) h+=dr('TVA sur frais Amazon',f2(m.tvaFrais)+' €');
-    if(p.tva) h+=dr('TVA collectée reversée',f2(m.tvaDue)+' €');
     if(p.autres) h+=dr('Autres frais',f2(p.autres)+' €');
-    h+=dr('Reversement Amazon estimé',f2(m.payout)+' €');
+    if(p.tva) h+=dr('TVA sur frais Amazon',f2(m.tvaFrais)+' €');
+    h+=dr('Reversement Amazon (payout)',f2(m.payout)+' €');
+    if(p.tva) h+=dr('TVA nette à reverser à l\'état',f2(m.tvaDue)+' €');
     h+=dr('Bénéfice net / unité',f2(m.net)+' €',c);
     h+=dr('ROI',Math.round(m.roi)+'%',c);
     h+=dr('Marge nette',Math.round(m.marge)+'%',c);
